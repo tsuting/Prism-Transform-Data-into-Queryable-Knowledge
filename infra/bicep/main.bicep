@@ -294,6 +294,40 @@ module storageRoleAssignment 'core/storage/storage-role-assignment.bicep' = if (
 }
 
 // ============================================================================
+// AI Services Role Assignment (for Container App Managed Identity)
+// ============================================================================
+
+module aiServicesRoleAssignment 'core/ai/ai-services-role-assignment.bicep' = if (deployContainerApps) {
+  name: 'ai-services-role-assignment'
+  scope: rg
+  params: {
+    aiServicesAccountName: aiFoundry.outputs.accountName
+    principalId: containerApps.outputs.backendPrincipalId
+  }
+  dependsOn: [
+    containerApps
+    aiFoundry
+  ]
+}
+
+// ============================================================================
+// AI Services Role Assignment (for Azure Search Managed Identity)
+// Required for Knowledge Agents and vectorizers to call Azure OpenAI
+// ============================================================================
+
+module searchAiServicesRoleAssignment 'core/ai/ai-services-role-assignment.bicep' = {
+  name: 'search-ai-services-role-assignment'
+  scope: rg
+  params: {
+    aiServicesAccountName: aiFoundry.outputs.accountName
+    principalId: search.outputs.principalId
+  }
+  dependsOn: [
+    aiFoundry
+  ]
+}
+
+// ============================================================================
 // Outputs
 // ============================================================================
 

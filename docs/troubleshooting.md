@@ -182,6 +182,32 @@ docker-compose -f infra/docker/docker-compose.yml logs backend
 
 ## Azure Service Issues
 
+### Azure OpenAI authentication errors
+
+**Error**: `Key based authentication is disabled for this resource` (403)
+
+This occurs when the Azure AI Services resource has key-based authentication disabled (common in enterprise environments with security policies).
+
+**Solution**: Prism uses `DefaultAzureCredential` with managed identity for authentication. Ensure:
+
+1. The Container App has a system-assigned managed identity enabled
+2. The managed identity has the `Cognitive Services OpenAI User` role on the AI Services account:
+   ```bash
+   # Check existing role assignments
+   az role assignment list --scope "/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<ai-services-name>" --query "[].roleDefinitionName" -o tsv
+
+   # Assign the role if missing
+   az role assignment create \
+     --role "Cognitive Services OpenAI User" \
+     --assignee-object-id <container-app-principal-id> \
+     --assignee-principal-type ServicePrincipal \
+     --scope "/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<ai-services-name>"
+   ```
+3. Restart the container app after role assignment:
+   ```bash
+   az containerapp revision restart --name prism-backend --resource-group <rg> --revision <revision-name>
+   ```
+
 ### Azure OpenAI errors
 
 **Error**: `RateLimitExceeded`
@@ -208,6 +234,32 @@ docker-compose -f infra/docker/docker-compose.yml logs backend
 **Solution**:
 - Check Azure AI Search service health
 - May need to upgrade service tier for higher availability
+
+### Knowledge Agent or Vectorizer authentication errors
+
+**Error**: `Could not complete model action. Key based authentication is disabled` or `Could not complete vectorization action. 403 Forbidden`
+
+This occurs when the Azure AI Search Knowledge Agent or vectorizer tries to call Azure OpenAI but doesn't have proper authentication configured.
+
+**Solution**: Azure Search's managed identity needs the `Cognitive Services OpenAI User` role on the Azure OpenAI resource:
+
+1. Get the Azure Search service principal ID:
+   ```bash
+   az search service show --name <search-name> --resource-group <rg> --query "identity.principalId" -o tsv
+   ```
+
+2. Assign the role:
+   ```bash
+   az role assignment create \
+     --role "Cognitive Services OpenAI User" \
+     --assignee-object-id <search-principal-id> \
+     --assignee-principal-type ServicePrincipal \
+     --scope "/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<ai-services-name>"
+   ```
+
+3. Recreate the Knowledge Agent (via UI rollback or API) to pick up the new configuration
+
+**Note**: New deployments via `azd up` automatically configure this role assignment.
 
 ## Getting More Help
 

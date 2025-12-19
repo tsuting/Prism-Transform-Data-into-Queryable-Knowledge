@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 
 from openai import AzureOpenAI
 from scripts.logging_config import get_logger
+from scripts.azure_credential_helper import get_token_provider
 from apps.api.app.services.storage_service import get_storage_service
 
 logger = get_logger(__name__)
@@ -61,16 +62,21 @@ def get_embedded_chunk_ids(storage) -> set:
 
 
 def init_openai_client():
-    """Initialize Azure OpenAI client."""
-    api_key = os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("AZURE_OPENAI_KEY")
+    """Initialize Azure OpenAI client with DefaultAzureCredential (Managed Identity)."""
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01-preview")
 
-    if not api_key or not endpoint:
-        logger.error("Azure OpenAI credentials not found")
+    if not endpoint:
+        logger.error("AZURE_OPENAI_ENDPOINT not set")
         return None
 
-    return AzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version)
+    # Use shared credential helper (handles errors, provides clear messages)
+    logger.info("Using DefaultAzureCredential for Azure OpenAI authentication")
+    return AzureOpenAI(
+        azure_ad_token_provider=get_token_provider(),
+        azure_endpoint=endpoint,
+        api_version=api_version
+    )
 
 
 def generate_embeddings_batch(
