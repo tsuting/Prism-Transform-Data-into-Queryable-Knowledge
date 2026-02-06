@@ -1,71 +1,43 @@
 # Third-Party Licenses
 
-This project (PrismRAG) is licensed under the MIT License. However, it depends on third-party packages with more restrictive licenses that may affect how you can use, distribute, or deploy this software.
+This project (PrismRAG) is licensed under the MIT License. All third-party dependencies use permissive open-source licenses (MIT, BSD, Apache 2.0).
 
-## Packages with Restrictive Licenses
+## Key Dependencies
 
-| Package | License | Concern |
+| Package | License | Purpose |
 |---------|---------|---------|
-| extract_msg | GPL 3.0 | Copyleft license |
-| PyMuPDF | AGPL 3.0 | Requires source code disclosure, including for web services |
-| pymupdf4llm | AGPL 3.0 | Requires source code disclosure, including for web services |
-| pymupdf_layout | Commercial | Requires paid license from Artifex |
+| azure-ai-documentintelligence | MIT | Azure Document Intelligence SDK for PDF extraction |
+| python-oxmsg | MIT | Outlook .msg email parsing |
+| openpyxl | MIT | Excel file extraction |
+| agent-framework | MIT | Microsoft Agent Framework for extraction and workflow agents |
+| langchain-text-splitters | MIT | Semantic chunking with markdown support |
+| tiktoken | MIT | Token counting for chunking |
+| azure-search-documents | MIT | Azure AI Search SDK |
+| azure-ai-evaluation | MIT | Answer quality evaluation |
+| azure-identity | MIT | Azure authentication (DefaultAzureCredential) |
+| azure-storage-blob | MIT | Azure Blob Storage SDK |
+| openai | Apache 2.0 | Azure OpenAI API client |
+| python-dotenv | BSD-3-Clause | Environment variable loading |
+| FastAPI | MIT | Backend API framework |
+| Vue 3 | MIT | Frontend framework |
 
-## License Implications
+## Azure Services
 
-### AGPL 3.0 (PyMuPDF, pymupdf4llm)
+The following Azure services are used at runtime (not bundled as dependencies):
 
-The GNU Affero General Public License v3.0 (AGPL 3.0) is the most restrictive of these licenses. Key requirements:
+| Service | Purpose |
+|---------|---------|
+| Azure Document Intelligence | PDF extraction via `prebuilt-layout` model |
+| Azure OpenAI | GPT-4.1/GPT-5-chat for AI agents, text-embedding-3-large for embeddings |
+| Azure AI Search | Hybrid search, semantic ranking, agentic retrieval |
+| Azure Blob Storage | Document and project data storage |
 
-1. **Source Code Disclosure**: If you deploy this software as a web service (which is how PrismRAG is designed to run), you must make the complete source code available to all users who interact with that service over a network.
+Azure services are governed by [Microsoft Azure Terms of Service](https://azure.microsoft.com/support/legal/).
 
-2. **Copyleft**: Any modifications or derivative works must also be licensed under AGPL 3.0.
+## License Compliance
 
-3. **License Preservation**: You must include the AGPL 3.0 license text and copyright notices in all copies.
-
-For commercial use where source code disclosure is not acceptable, Artifex Software offers commercial licenses for PyMuPDF. See: https://pymupdf.io/
-
-### GPL 3.0 (extract_msg)
-
-The GNU General Public License v3.0 (GPL 3.0) is a copyleft license that requires:
-
-1. **Copyleft**: Derivative works must also be licensed under GPL 3.0.
-
-2. **Source Code Distribution**: If you distribute binaries, you must also provide source code or a written offer to provide source code.
-
-3. **License Preservation**: You must include the GPL 3.0 license text and copyright notices.
-
-Note: GPL 3.0 (unlike AGPL) does not have the network use provision, so running as a web service without distribution may not trigger the copyleft requirements. However, legal interpretation varies.
-
-### Commercial License (pymupdf_layout)
-
-The pymupdf_layout package requires a commercial license from Artifex Software. If you are using layout analysis features, you must obtain appropriate licensing.
-
-Contact Artifex Software for licensing: https://artifex.com/
-
-## Alternatives
-
-If these license restrictions are problematic for your use case, consider these alternatives:
-
-| Restricted Package | Alternative | License |
-|--------------------|-------------|---------|
-| PyMuPDF / pymupdf4llm | pdfplumber, pypdf, pdfminer.six | MIT / BSD |
-| extract_msg | email (stdlib), python-oxmsg | Built-in / MIT |
-| pymupdf_layout | (N/A - layout analysis requires commercial tools or custom implementation) | - |
-
-Note: Alternative packages may have different capabilities and performance characteristics.
-
-## Compliance
-
-To comply with the AGPL 3.0 license when deploying PrismRAG as a web service:
-
-1. Make the complete source code of your deployment available to users
-2. Include all license texts (AGPL 3.0, GPL 3.0) with the deployment
-3. Preserve all copyright notices
-4. Document any modifications you have made
-
-Or, contact Artifex Software to obtain a commercial license for PyMuPDF that does not require source code disclosure.
+All third-party packages in this project use permissive licenses that are compatible with the MIT License. No copyleft (GPL, AGPL) or commercial license dependencies exist.
 
 ## Disclaimer
 
-This document is provided for informational purposes and does not constitute legal advice. Consult with a legal professional to understand your specific obligations under these licenses.
+This document is provided for informational purposes and does not constitute legal advice. Consult with a legal professional for specific licensing questions.

@@ -185,7 +185,7 @@ Comments: [Any additional context, technical details, or important notes]
         safe_name = safe_name.replace(' ', '_').replace('/', '_').replace('-', '_')
 
         # Create agent
-        agent = self.chat_client.create_agent(
+        agent = self.chat_client.as_agent(
             name=safe_name,
             instructions=instructions,
             tools=[self.search_tool]
@@ -243,7 +243,9 @@ Comments: [Any additional context, technical details, or important notes]
             print(f"\n[SAVER] Processing response for {section_id}/{question_id}...")
 
             # Extract response text
-            if hasattr(agent_response, 'agent_run_response'):
+            if hasattr(agent_response, 'agent_response') and hasattr(agent_response.agent_response, 'text'):
+                response_text = agent_response.agent_response.text
+            elif hasattr(agent_response, 'agent_run_response'):
                 response_text = agent_response.agent_run_response.text
             else:
                 response_text = str(agent_response)

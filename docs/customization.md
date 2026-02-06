@@ -277,18 +277,7 @@ Context:
 
 ### Extraction Prompts
 
-Customize Vision AI prompts in `scripts/extraction/pdf_extraction_hybrid.py`:
-
-```python
-VISION_PROMPT = """Analyze this document page and extract:
-1. All text content
-2. Table data (in markdown format)
-3. Diagram descriptions
-4. Key metrics and values
-
-Format the output in clean markdown.
-"""
-```
+PDF extraction uses Azure Document Intelligence's `prebuilt-layout` model in `scripts/extraction/pdf_extraction_di.py`. The model output format is configured via the API - no custom prompts needed for extraction. Project-specific instructions in `config.json` are applied during post-processing.
 
 ## Environment-Specific Configuration
 

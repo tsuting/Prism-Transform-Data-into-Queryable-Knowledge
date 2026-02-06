@@ -6,9 +6,9 @@ This guide covers supported document formats and the ingestion pipeline.
 
 | Format | Extensions | Extraction Method |
 |--------|------------|-------------------|
-| PDF | `.pdf` | PyMuPDF4LLM + Vision AI |
+| PDF | `.pdf` | Azure Document Intelligence |
 | Excel | `.xlsx`, `.xlsm` | openpyxl + AI enhancement |
-| Email | `.msg` | extract-msg + AI enhancement |
+| Email | `.msg` | python-oxmsg + AI enhancement |
 | Images | `.png`, `.jpg`, `.jpeg` | Vision AI |
 
 ## Document Upload
@@ -37,31 +37,26 @@ cp document.pdf projects/myproject/documents/
 
 ## PDF Processing
 
-### Hybrid Extraction
+### Azure Document Intelligence
 
-Prism uses a hybrid approach for PDFs that balances cost and quality:
+Prism uses Azure Document Intelligence's `prebuilt-layout` model for PDF extraction:
 
-1. **Text Extraction (PyMuPDF4LLM)**
-   - Fast, local processing
-   - No API costs
-   - Extracts text, tables, and structure
-
-2. **Vision AI (Azure OpenAI)**
-   - Processes pages with images/diagrams
-   - Interprets visual content
-   - Only used when needed (cost optimization)
+1. **Document Intelligence (`prebuilt-layout`)**
+   - Native markdown output with layout detection
+   - HTML tables with merged cells, rowspan/colspan
+   - `<figure>` tags with captions for images/diagrams
+   - Selection marks rendered as Unicode checkboxes
+   - LaTeX formulas for mathematical content
+   - `<!-- PageBreak -->` markers for page boundaries
 
 ### How It Works
 
 ```
-For each page in PDF:
-  1. Extract text with PyMuPDF4LLM
-  2. Check if page has images/diagrams
-  3. If visual content exists:
-     - Send to Vision AI for interpretation
-     - Merge with text extraction
-  4. If text-only:
-     - Use text extraction only (skip Vision)
+For each PDF:
+  1. Send to Azure Document Intelligence (prebuilt-layout model)
+  2. Receive structured markdown output
+  3. Page boundaries marked with <!-- PageBreak --> markers
+  4. Tables preserved as HTML with full structure
 ```
 
 ### Configuration
@@ -99,7 +94,7 @@ Project-specific extraction instructions in `config.json`:
 
 ### Extraction Method
 
-1. **extract-msg** parses .msg files
+1. **python-oxmsg** parses .msg files
 2. Extracts: sender, recipients, subject, body, attachments
 3. AI enhancement summarizes and structures content
 

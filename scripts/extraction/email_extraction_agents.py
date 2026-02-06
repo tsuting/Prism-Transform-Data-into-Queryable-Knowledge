@@ -2,10 +2,10 @@
 Email Processing with Agent-Based Semantic Enhancement.
 
 This module uses a hybrid approach:
-1. extract-msg library for reliable extraction (metadata, body, attachments)
+1. python-oxmsg library for reliable .msg extraction (metadata, body, attachments)
 2. Agent for semantic enhancement (requirements extraction, categorization, context)
 
-The agent doesn't re-extract (extract-msg is reliable) but adds intelligence and context.
+The agent doesn't re-extract but adds intelligence and context.
 """
 
 import os
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 # Import existing email extraction function
 from .extract_msg_files import format_email_as_markdown
 
-from agent_framework import ChatMessage, Role, TextContent
+from agent_framework import ChatMessage, Role
 from agent_framework.azure import AzureOpenAIChatClient
 
 # Load environment
@@ -143,7 +143,7 @@ def _get_email_enhancement_agent():
     global _email_enhancement_agent
     if _email_enhancement_agent is None:
         client = _get_client()
-        _email_enhancement_agent = client.create_agent(
+        _email_enhancement_agent = client.as_agent(
             name="Email_Enhancement",
             instructions=create_email_enhancement_instructions()
         )
@@ -160,7 +160,7 @@ async def enhance_email_with_agent(
 
     Args:
         msg_path: Path to original .msg file
-        base_markdown: Markdown representation from extract-msg
+        base_markdown: Markdown representation from python-oxmsg extraction
         project_instructions: Optional custom instructions from project config
 
     Returns:
@@ -187,7 +187,7 @@ Provide comprehensive semantic analysis and enhanced markdown following the inst
 
     message = ChatMessage(
         role=Role.USER,
-        contents=[TextContent(text=analysis_request)]
+        text=analysis_request
     )
 
     try:
@@ -241,7 +241,7 @@ Provide comprehensive semantic analysis and enhanced markdown following the inst
 
 async def process_email_with_agents(msg_path: Path, project_instructions: str = None) -> Dict:
     """
-    Process email file with hybrid approach: extract-msg + agent enhancement.
+    Process email file with hybrid approach: python-oxmsg + agent enhancement.
 
     Args:
         msg_path: Path to .msg file

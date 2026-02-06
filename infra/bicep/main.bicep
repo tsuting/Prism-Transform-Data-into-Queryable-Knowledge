@@ -56,14 +56,8 @@ param chatModelName string = 'gpt-4.1'
 @description('Chat deployment capacity (TPM in thousands)')
 param chatCapacity int = 30
 
-@description('Workflow model deployment name (for workflow Q&A - supports newer models)')
+@description('Workflow model deployment name (for workflow Q&A - deployed separately, e.g. gpt-5-chat)')
 param workflowDeploymentName string = 'gpt-5-chat'
-
-@description('Workflow model name')
-param workflowModelName string = 'gpt-5-chat'
-
-@description('Workflow deployment capacity (TPM in thousands)')
-param workflowCapacity int = 50
 
 @description('Text embedding model deployment name')
 param embeddingDeploymentName string = 'text-embedding-3-large'
@@ -111,17 +105,7 @@ var modelDeployments = [
       capacity: chatCapacity
     }
   }
-  {
-    name: workflowDeploymentName
-    model: {
-      format: 'OpenAI'
-      name: workflowModelName
-    }
-    sku: {
-      name: 'GlobalStandard'
-      capacity: workflowCapacity
-    }
-  }
+  // Workflow model (gpt-5-chat) is deployed via Azure Portal, not managed by Bicep
   {
     name: embeddingDeploymentName
     model: {
@@ -195,6 +179,21 @@ module storage 'core/storage/storage-account.bicep' = {
 }
 
 // ============================================================================
+// Azure Document Intelligence (for PDF extraction)
+// ============================================================================
+
+module documentIntelligence 'core/ai/document-intelligence.bicep' = {
+  name: 'document-intelligence'
+  scope: rg
+  params: {
+    location: location
+    tags: tags
+    name: '${abbrs.cognitiveServicesAccounts}prism-di-${resourceToken}'
+    skuName: 'S0'
+  }
+}
+
+// ============================================================================
 // Azure AI Search
 // ============================================================================
 
@@ -259,6 +258,8 @@ module containerApps 'core/host/container-apps.bicep' = if (deployContainerApps)
     storageBlobEndpoint: storage.outputs.primaryEndpoint
     storageContainerName: storage.outputs.containerName
     // storageAccountId removed - role assignment handled separately
+    // Document Intelligence
+    documentIntelligenceEndpoint: documentIntelligence.outputs.endpoint
   }
 }
 
@@ -304,6 +305,19 @@ module aiServicesRoleAssignment 'core/ai/ai-services-role-assignment.bicep' = if
 }
 
 // ============================================================================
+// Document Intelligence Role Assignment (for Container App Managed Identity)
+// ============================================================================
+
+module documentIntelligenceRoleAssignment 'core/ai/document-intelligence-role-assignment.bicep' = if (deployContainerApps) {
+  name: 'document-intelligence-role-assignment'
+  scope: rg
+  params: {
+    documentIntelligenceAccountName: documentIntelligence.outputs.name
+    principalId: containerApps!.outputs.backendPrincipalId
+  }
+}
+
+// ============================================================================
 // AI Services Role Assignment (for Azure Search Managed Identity)
 // Required for Knowledge Agents and vectorizers to call Azure OpenAI
 // ============================================================================
@@ -329,8 +343,6 @@ output AZURE_LOCATION string = location
 output AZURE_AI_SERVICES_ENDPOINT string = aiFoundry.outputs.endpoint
 output AZURE_AI_PROJECT_NAME string = aiFoundry.outputs.projectName
 output AZURE_OPENAI_ENDPOINT string = aiFoundry.outputs.endpoint
-#disable-next-line outputs-should-not-contain-secrets
-output AZURE_OPENAI_KEY string = aiFoundry.outputs.key
 output AZURE_OPENAI_CHAT_DEPLOYMENT_NAME string = chatDeploymentName
 output AZURE_OPENAI_WORKFLOW_DEPLOYMENT_NAME string = workflowDeploymentName
 output AZURE_OPENAI_MODEL_NAME string = chatModelName
@@ -362,3 +374,6 @@ output AUTH_PASSWORD string = effectiveAuthPassword
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.outputs.name
 output AZURE_STORAGE_ACCOUNT_URL string = storage.outputs.primaryEndpoint
 output AZURE_STORAGE_CONTAINER_NAME string = storage.outputs.containerName
+
+// Document Intelligence
+output AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT string = documentIntelligence.outputs.endpoint

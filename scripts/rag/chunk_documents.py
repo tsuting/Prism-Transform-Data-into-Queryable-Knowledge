@@ -62,12 +62,58 @@ def load_document_inventory(storage) -> Dict:
     return inventory
 
 
+def _split_by_di_page_breaks(content: str) -> List[Tuple[str, str]]:
+    """
+    Split content by Document Intelligence <!-- PageBreak --> markers.
+
+    Also extracts page headers/footers/numbers from HTML comments:
+    - <!-- PageHeader="..." -->
+    - <!-- PageFooter="..." -->
+    - <!-- PageNumber="..." -->
+
+    Args:
+        content: Markdown content with DI page break markers
+
+    Returns:
+        List of (section_id, section_content) tuples
+    """
+    # Split by page breaks
+    marker = "<!-- PageBreak -->"
+    pages = content.split(marker)
+
+    sections = []
+    for i, page_content in enumerate(pages, 1):
+        page_content = page_content.strip()
+
+        if not page_content:
+            continue
+
+        # Extract page number from comment if present
+        page_num_match = re.search(r'<!-- PageNumber="(\d+)" -->', page_content)
+        if page_num_match:
+            page_num = int(page_num_match.group(1))
+        else:
+            page_num = i
+
+        section_id = f"Page {page_num}"
+
+        # Remove page header/footer/number comments from content (metadata, not content)
+        clean_content = re.sub(r'<!-- Page(?:Header|Footer|Number)="[^"]*" -->\s*', '', page_content)
+        clean_content = clean_content.strip()
+
+        if clean_content:
+            sections.append((section_id, clean_content))
+
+    return sections
+
+
 def split_by_document_sections(content: str, source_file: str) -> List[Tuple[str, str]]:
     """
     Split markdown content by document structure markers.
 
     Handles different document types:
-    - PDF: "## Page N" -> section_id = "Page 1", "Page 2", etc.
+    - PDF (Document Intelligence): <!-- PageBreak --> markers
+    - PDF (Legacy): "## Page N" markers
     - Excel: "## Sheet: Name" -> section_id = "Sheet: Sales", "Sheet: Data", etc.
     - Email: "## Email Metadata", "## Email Body" -> section_id = "Email Metadata", etc.
     - Other: Falls back to treating entire content as one section
@@ -86,9 +132,13 @@ def split_by_document_sections(content: str, source_file: str) -> List[Tuple[str
     is_excel = source_lower.endswith(('.xlsx', '.xls', '.csv'))
     is_email = source_lower.endswith('.msg')
 
+    # Check for Document Intelligence format first (PDF with <!-- PageBreak -->)
+    if is_pdf and '<!-- PageBreak -->' in content:
+        return _split_by_di_page_breaks(content)
+
     # Define patterns for each document type
     if is_pdf:
-        # Match "## Page 1", "## Page 123", etc.
+        # Legacy format: Match "## Page 1", "## Page 123", etc.
         pattern = r'^##\s+Page\s+(\d+)\s*$'
         extract_id = lambda m: f"Page {m.group(1)}"
     elif is_excel:

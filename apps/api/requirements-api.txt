@@ -12,5 +12,5 @@ python-dotenv==1.0.0
 # Async support (already in main requirements but listed for clarity)
 # asyncio - built-in
 
-# Note: All other dependencies (Azure OpenAI, Azure Search, PyMuPDF, etc.)
+# Note: All other dependencies (Azure OpenAI, Azure Search, Document Intelligence, etc.)
 # are inherited from the main requirements.txt in the project root

@@ -18,7 +18,7 @@ COPY apps/api/requirements-api.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir --pre -r requirements.txt && \
     pip install --no-cache-dir -r requirements-api.txt
 
 
