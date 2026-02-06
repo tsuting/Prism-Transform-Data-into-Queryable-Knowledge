@@ -46,34 +46,13 @@ Prism uses local libraries first, then AI only when necessary:
 │  PDF Files                                                               │
 │  ─────────                                                               │
 │  ┌────────────────────┐     ┌────────────────────┐                      │
-│  │    PyMuPDF4LLM     │────▶│  Structured        │                      │
-│  │  (Local, Free)     │     │  Markdown          │                      │
-│  │  • Text extraction │     │  + Tables          │                      │
-│  │  • Table detection │     └─────────┬──────────┘                      │
-│  │  • Layout analysis │               │                                  │
-│  └────────────────────┘               │                                  │
-│                                       ▼                                  │
-│                          ┌────────────────────────┐                      │
-│                          │  Has images/diagrams?  │                      │
-│                          └───────────┬────────────┘                      │
-│                                      │                                   │
-│                         ┌────────────┴────────────┐                      │
-│                         │                         │                      │
-│                        Yes                        No                     │
-│                         │                         │                      │
-│                         ▼                         │                      │
-│              ┌────────────────────┐               │                      │
-│              │   GPT-4.1 Vision   │               │                      │
-│              │   (Validation)     │               │                      │
-│              │  • Image analysis  │               │                      │
-│              │  • Diagram reading │               │                      │
-│              └─────────┬──────────┘               │                      │
-│                        │                          │                      │
-│                        └──────────┬───────────────┘                      │
-│                                   ▼                                      │
-│                          ┌────────────────┐                              │
-│                          │ Final Markdown │                              │
-│                          └────────────────┘                              │
+│  │  Azure Document    │────▶│  Structured        │                      │
+│  │  Intelligence      │     │  Markdown          │                      │
+│  │  (prebuilt-layout) │     │  + HTML Tables     │                      │
+│  │  • Text extraction │     │  + Figure tags     │                      │
+│  │  • Table detection │     │  + Selection marks  │                      │
+│  │  • Layout analysis │     └────────────────────┘                      │
+│  └────────────────────┘                                                  │
 │                                                                          │
 │  Excel Files                                                             │
 │  ───────────                                                             │
@@ -87,7 +66,7 @@ Prism uses local libraries first, then AI only when necessary:
 │  Email Files (.msg)                                                      │
 │  ──────────────────                                                      │
 │  ┌────────────────────┐     ┌────────────────────┐     ┌──────────────┐ │
-│  │    extract-msg     │────▶│   AI Enhancement   │────▶│   Markdown   │ │
+│  │   python-oxmsg     │────▶│   AI Enhancement   │────▶│   Markdown   │ │
 │  │  • Headers         │     │  • Categorization  │     │   + Metadata │ │
 │  │  • Body            │     │  • Action items    │     └──────────────┘ │
 │  │  • Attachments     │     │  • Deadlines       │                      │
@@ -96,21 +75,18 @@ Prism uses local libraries first, then AI only when necessary:
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Why Hybrid?
+### Why Document Intelligence?
 
 | Approach | Cost | Speed | Quality |
 |----------|------|-------|---------|
 | Vision-only | $$$$ | Slow | High |
-| Local-only | Free | Fast | Medium |
-| **Hybrid** | $ | Fast | High |
+| Local libraries | Free | Fast | Medium |
+| **Document Intelligence** | ~$1.50/1K pages | Fast | High |
 
-- **70%+ cost reduction** vs full-vision approaches
-- Local extraction handles text-heavy pages instantly
-- Vision validates pages with actual embedded images only
-- **Smart Vision Triggers**:
-  - Tables with vector drawings (borders, lines) → local extraction only
-  - Pages with actual images (photos, diagrams, charts) → Vision validation
-  - Repeated images (logos, headers appearing on >10 pages) → auto-filtered
+- **Consistent high quality**: Native markdown output with HTML tables, figures, and layout detection
+- **No local dependencies**: No AGPL/GPL packages required
+- **Managed service**: Azure handles scaling, updates, and model improvements
+- **Rich output format**: HTML tables with merged cells/rowspan, `<figure>` tags, selection marks (checkboxes), LaTeX formulas
 
 ## RAG Pipeline
 
@@ -323,8 +299,8 @@ User uploads PDF/Excel/Email
           │
           ▼
 ┌─────────────────────┐
-│ Local Extraction    │ ◀── PyMuPDF4LLM, openpyxl, extract-msg
-│ (Free, Fast)        │
+│ Document Extraction │ ◀── Azure Document Intelligence, openpyxl, python-oxmsg
+│ (Azure Services)    │
 └──────────┬──────────┘
            │
            ▼

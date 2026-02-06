@@ -1,14 +1,13 @@
 """
-Email extraction utility for .msg files (Outlook emails).
+Email extraction for .msg files using python-oxmsg (MIT licensed).
 
-This module provides helper functions used by email_extraction_agents.py:
-- format_email_as_markdown(): Convert .msg file to markdown format
-
-Note: This is a utility module, not meant to be run standalone.
+Uses python-oxmsg (MIT licensed) maintained by scanny (author of python-pptx, python-docx).
+https://github.com/scanny/python-oxmsg
 """
-
 from pathlib import Path
-import extract_msg
+import re
+import html as html_module
+from oxmsg import Message
 from scripts.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -25,10 +24,8 @@ def format_email_as_markdown(msg_path: Path) -> str:
         Formatted markdown string
     """
     try:
-        # Open the message
-        msg = extract_msg.Message(str(msg_path))
+        msg = Message.load(str(msg_path))
 
-        # Build markdown content
         markdown = []
 
         # Header
@@ -39,71 +36,56 @@ def format_email_as_markdown(msg_path: Path) -> str:
         markdown.append("## Email Metadata")
         markdown.append("")
         markdown.append(f"**From:** {msg.sender or 'Unknown'}")
-        markdown.append(f"**To:** {msg.to or 'Unknown'}")
-        if msg.cc:
-            markdown.append(f"**CC:** {msg.cc}")
-        if msg.date:
-            markdown.append(f"**Date:** {msg.date}")
+
+        # To/CC accessed via message_headers dict
+        headers = msg.message_headers or {}
+        to_addr = headers.get('To', 'Unknown')
+        cc_addr = headers.get('Cc')
+
+        markdown.append(f"**To:** {to_addr}")
+        if cc_addr:
+            markdown.append(f"**CC:** {cc_addr}")
+        if msg.sent_date:
+            markdown.append(f"**Date:** {msg.sent_date}")
         markdown.append("")
 
-        # Attachments section (list only, attachments not extracted)
+        # Attachments
         if msg.attachments:
             markdown.append("## Attachments")
             markdown.append("")
             for i, attachment in enumerate(msg.attachments, 1):
-                att_name = getattr(attachment, 'longFilename', None) or getattr(attachment, 'shortFilename', f'attachment_{i}')
-                att_size = getattr(attachment, 'size', 0)
-                markdown.append(f"{i}. **{att_name}** ({att_size:,} bytes)")
-
+                name = attachment.file_name or f'attachment_{i}'
+                size = attachment.size or 0
+                markdown.append(f"{i}. **{name}** ({size:,} bytes)")
             markdown.append("")
 
-        # Email body
+        # Body - try plain text first, fall back to HTML
         markdown.append("## Email Body")
         markdown.append("")
 
-        # Try to get plain text body first, fall back to HTML
         body = msg.body
-
-        if not body and msg.htmlBody:
-            # Simple HTML to text conversion
-            import re
-            html = msg.htmlBody
-            # Remove scripts and styles
+        if not body and msg.html_body:
+            # Convert HTML to plain text
+            html = msg.html_body
             html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
             html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            # Remove HTML tags
             html = re.sub(r'<[^>]+>', ' ', html)
-            # Decode HTML entities
-            import html as html_module
             html = html_module.unescape(html)
-            # Clean up whitespace
-            html = re.sub(r'\s+', ' ', html)
-            body = html.strip()
+            body = re.sub(r'\s+', ' ', html).strip()
 
         if body:
-            # Clean up the body
-            body = body.strip()
-            # Add to markdown
-            markdown.append(body)
+            markdown.append(body.strip())
         else:
             markdown.append("*[No body content]*")
-
         markdown.append("")
-
-        # Close the message
-        msg.close()
 
         result = "\n".join(markdown)
 
         size_kb = len(result.encode('utf-8')) / 1024
-        if size_kb > 900:
-            logger.warning(f"Email {msg_path.name} close to 1MB limit ({size_kb:.1f} KB)")
+        logger.info(f"Extracted {msg_path.name}: {size_kb:.1f} KB")
 
         return result
 
     except Exception as e:
         logger.error(f"Failed to extract {msg_path.name}: {e}")
         return None
-
-
-# Note: Standalone execution removed. This module is now a utility for email_extraction_agents.py

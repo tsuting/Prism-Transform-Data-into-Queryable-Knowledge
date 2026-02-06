@@ -18,7 +18,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from typing import Dict, List
 
-from scripts.extraction.pdf_extraction_hybrid import process_pdf_hybrid_sync
+from scripts.extraction.pdf_extraction_di import process_pdf_di_sync as process_pdf_hybrid_sync
 from scripts.extraction.excel_extraction_agents import process_excel_with_agents_sync
 from scripts.extraction.email_extraction_agents import process_email_with_agents_sync
 from scripts.logging_config import get_logger

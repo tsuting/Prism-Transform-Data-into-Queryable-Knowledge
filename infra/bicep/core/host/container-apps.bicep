@@ -64,6 +64,10 @@ param storageContainerName string = ''
 
 // storageAccountId parameter removed - role assignment handled in main.bicep
 
+// Document Intelligence configuration
+@description('Azure Document Intelligence endpoint')
+param documentIntelligenceEndpoint string = ''
+
 // ============================================================================
 // Container Registry
 // ============================================================================
@@ -232,6 +236,11 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: storageContainerName
             }
             // No AZURE_STORAGE_ACCOUNT_KEY - uses managed identity
+            // Document Intelligence
+            {
+              name: 'AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT'
+              value: documentIntelligenceEndpoint
+            }
           ]
         }
       ]

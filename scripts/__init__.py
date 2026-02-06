@@ -5,11 +5,11 @@ This package contains all the processing scripts for document extraction,
 RAG pipeline operations, and Azure AI Search integration.
 
 Structure:
-    extraction/                 # Core document extraction agents
-        - pdf_extraction_agents: Agent-based PDF extraction with hybrid text/vision
+    extraction/                 # Core document extraction
+        - pdf_extraction_di: Azure Document Intelligence PDF extraction
         - excel_extraction_agents: Excel processing with agent enhancement
         - email_extraction_agents: Email processing with agent enhancement
-        - extract_msg_files: Helper functions for .msg file extraction
+        - extract_msg_files: python-oxmsg helper functions for .msg file extraction
         - plugins/              # Domain-specific extractors (optional)
             - sld_extractor: Specialized SLD (Single-Line Diagram) extraction
 

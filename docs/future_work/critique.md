@@ -98,25 +98,23 @@ graph LR
         MSG[📧 Email]
     end
 
-    subgraph "Local Extraction"
-        PM[PyMuPDF4LLM]
+    subgraph "Extraction"
+        DI[Azure Doc Intelligence]
         OP[openpyxl]
-        EM[extract-msg]
+        OX[python-oxmsg]
     end
 
     subgraph "AI Enhancement"
-        VIS[Vision Validator]
         ENH[AI Enhancer]
     end
 
-    PDF --> PM --> VIS
+    PDF --> DI --> MD[📝 Markdown]
     XLS --> OP --> ENH
-    MSG --> EM --> ENH
+    MSG --> OX --> ENH
 
-    VIS --> MD[📝 Markdown]
     ENH --> MD
 
-    style VIS fill:#0078D4,color:#fff
+    style DI fill:#0078D4,color:#fff
     style ENH fill:#0078D4,color:#fff
 ```
 
@@ -242,13 +240,11 @@ sequenceDiagram
     API->>PS: Start extraction task
 
     rect rgb(240, 248, 255)
-        Note over EX: Stage 1: Hybrid Extraction
+        Note over EX: Stage 1: Document Extraction
         PS->>EX: Process documents
-        EX->>EX: PyMuPDF4LLM (local, free)
-        EX->>EX: Analyze pages for images
-        alt Has images/diagrams
-            EX->>EX: GPT-4.1 Vision validation
-        end
+        EX->>EX: Azure Document Intelligence (PDFs)
+        EX->>EX: openpyxl + AI Enhancement (Excel)
+        EX->>EX: python-oxmsg + AI Enhancement (Email)
         EX->>BLOB: Save markdown results
     end
 
@@ -367,21 +363,21 @@ sequenceDiagram
 
 ## Strengths & Best Practices
 
-### 1. Hybrid Extraction Strategy (Excellent)
+### 1. Document Extraction Strategy (Excellent)
 
-The solution's hybrid approach to document extraction is its standout innovation:
+The solution uses Azure-native services and permissively-licensed libraries for extraction:
 
 ```
-Local Extraction (Free)     →    AI Validation (When Needed)
-├── PyMuPDF4LLM            →    GPT-4.1 Vision
+Extraction                  →    AI Enhancement (When Needed)
+├── Azure Doc Intelligence  →    PDF markdown output (no post-processing needed)
 ├── openpyxl               →    Excel Enhancement Agent
-└── extract-msg            →    Email Enhancement Agent
+└── python-oxmsg           →    Email Enhancement Agent
 ```
 
-**Key innovations:**
-- **Smart Vision triggers**: Only pages with actual embedded images (not vector drawings) trigger Vision API calls
-- **Repeated image filtering**: Headers/logos appearing on 10+ pages are auto-filtered
-- **Validation over extraction**: Vision validates/enhances local extraction rather than extracting from scratch
+**Key strengths:**
+- **Azure Document Intelligence**: Consistent high-quality markdown output with HTML tables, figures, and layout detection
+- **No restrictive licenses**: All dependencies are MIT/BSD/Apache 2.0 (no AGPL/GPL)
+- **Managed service**: Azure handles scaling, updates, and model improvements
 - **Cost impact**: 70%+ reduction in Vision API costs
 
 ### 2. Contextual Chunk Enrichment (Excellent)
@@ -693,7 +689,7 @@ graph LR
 
 | Optimization | Implementation | Impact |
 |--------------|----------------|--------|
-| Hybrid PDF extraction | PyMuPDF4LLM + selective Vision | 70%+ Vision cost reduction |
+| Azure Document Intelligence | prebuilt-layout model for PDFs | Consistent quality, ~$1.50/1K pages |
 | Repeated image filtering | Skip logos/headers appearing >10 pages | Significant for multi-page docs |
 | Resume capability | Skip already-embedded chunks | Avoids re-processing |
 | Consumption-based hosting | Container Apps consumption plan | Pay per request |

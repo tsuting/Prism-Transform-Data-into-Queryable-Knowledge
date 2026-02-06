@@ -36,8 +36,8 @@ This template is built to showcase Azure AI services. We strongly advise against
 
 | Challenge | Prism's Solution |
 |-----------|------------------|
-| **Expensive Vision API calls** | Hybrid extraction: PyMuPDF4LLM extracts text locally (free), Vision AI only validates pages with images/diagrams. **70%+ cost reduction.** |
-| **Poor table extraction** | pymupdf4llm preserves table structure as markdown. openpyxl extracts Excel with formulas and formatting. |
+| **Inconsistent PDF extraction** | Azure Document Intelligence extracts PDFs with native markdown output, HTML tables, and layout detection. No local dependencies. |
+| **Poor table extraction** | Document Intelligence preserves table structure with merged cells/rowspan/colspan. openpyxl extracts Excel with formulas and formatting. |
 | **Lost document structure** | Structure-aware chunking respects markdown hierarchy (##, ###). Extracts section titles as metadata. |
 | **Hallucinated answers** | Agentic retrieval with strict grounding instructions. Always cites sources. Distinguishes "not found" vs "explicitly excluded." |
 | **Manual Q&A workflows** | Define question templates per project. Run workflows against your knowledge base. Export results to CSV. |
@@ -46,12 +46,10 @@ This template is built to showcase Azure AI services. We strongly advise against
 
 ### Document Extraction
 
-Documents go through hybrid extraction using [Microsoft Agent Framework](https://github.com/microsoft/agent-framework). Reliable local libraries handle the parsing, AI agents handle validation and enhancement.
+Documents go through extraction using Azure services and [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) for enhancement.
 
 **PDF Processing**
-- **PyMuPDF4LLM**: Fast, local text/table extraction - free, structure-preserving
-- **Vision_Validator agent**: Validates pages containing images, diagrams, or schematics using GPT-4.1 Vision
-- **Smart optimization**: Text-only pages skip Vision entirely. Repeated images (logos, headers) auto-filtered.
+- **Azure Document Intelligence**: `prebuilt-layout` model with native markdown output, HTML tables, figure tags, and selection marks
 - **Custom instructions**: Project-specific extraction prompts via `config.json`
 
 **Excel Processing**
@@ -59,7 +57,7 @@ Documents go through hybrid extraction using [Microsoft Agent Framework](https:/
 - **Excel_Enhancement agent**: Restructures raw data into search-optimized markdown, preserving item numbers, part codes, specifications
 
 **Email Processing**
-- **extract-msg**: Reliable .msg parsing with attachment extraction
+- **python-oxmsg**: MIT-licensed .msg file parsing with metadata and body extraction
 - **Email_Enhancement agent**: Classifies email purpose and urgency, extracts requirements and action items, identifies deadlines, generates summaries
 
 ### RAG Pipeline
@@ -70,7 +68,7 @@ Upload → Extract → Deduplicate → Chunk → Embed → Index → Query
 
 | Stage | What It Does |
 |-------|--------------|
-| **Extract** | Hybrid local + AI agent extraction to structured markdown |
+| **Extract** | Azure Document Intelligence + AI agent extraction to structured markdown |
 | **Deduplicate** | SHA256 hashing removes duplicate content |
 | **Chunk** | Document-aware recursive chunking (1000 tokens, 200 overlap) |
 | **Embed** | text-embedding-3-large (1024 dimensions, batch processing) |
@@ -150,15 +148,20 @@ See [Architecture Documentation](docs/architecture.md) for detailed system desig
 |-----------|---------|
 | [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) | Orchestrates extraction agents (Vision_Validator, Excel_Enhancement, Email_Enhancement) and workflow agents |
 
-### Open Source Libraries (No API Costs)
+### Azure Services (Extraction)
 
-| Library | Purpose |
+| Service | Purpose |
 |---------|---------|
-| [PyMuPDF4LLM](https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/) | PDF text/table extraction with layout detection |
-| [openpyxl](https://openpyxl.readthedocs.io/) | Excel extraction with formula support |
-| [extract-msg](https://github.com/TeamMsgExtractor/msg-extractor) | Outlook .msg email parsing |
-| [tiktoken](https://github.com/openai/tiktoken) | Token counting for accurate chunk sizing |
-| [LangChain text splitters](https://api.python.langchain.com/en/latest/text_splitters/character/langchain_text_splitters.character.RecursiveCharacterTextSplitter.html) | Structure-aware recursive chunking |
+| [Azure Document Intelligence](https://learn.microsoft.com/azure/ai-services/document-intelligence/) | PDF extraction with `prebuilt-layout` model (markdown, tables, figures) |
+
+### Open Source Libraries
+
+| Library | License | Purpose |
+|---------|---------|---------|
+| [openpyxl](https://openpyxl.readthedocs.io/) | MIT | Excel extraction with formula support |
+| [python-oxmsg](https://github.com/scanny/python-oxmsg) | MIT | Outlook .msg email parsing |
+| [tiktoken](https://github.com/openai/tiktoken) | MIT | Token counting for accurate chunk sizing |
+| [LangChain text splitters](https://api.python.langchain.com/en/latest/text_splitters/character/langchain_text_splitters.character.RecursiveCharacterTextSplitter.html) | MIT | Structure-aware recursive chunking |
 
 ### Application
 
@@ -189,6 +192,7 @@ azd up
 
 **What gets deployed:**
 - AI Foundry with GPT-4.1, gpt-5-chat (workflows), text-embedding-3-large
+- Azure Document Intelligence for PDF extraction
 - Azure AI Search with semantic ranking enabled
 - Azure Blob Storage for project data
 - Container Apps with system-assigned managed identity (backend + frontend)
@@ -239,9 +243,9 @@ prism/
 │       └── src/views/            # Dashboard, Query, Workflows, Results
 ├── scripts/
 │   ├── extraction/               # Document extractors
-│   │   ├── pdf_extraction_hybrid.py    # PyMuPDF4LLM + Vision
+│   │   ├── pdf_extraction_di.py        # Azure Document Intelligence
 │   │   ├── excel_extraction_agents.py  # openpyxl + AI
-│   │   └── email_extraction_agents.py  # extract-msg + AI
+│   │   └── email_extraction_agents.py  # python-oxmsg + AI
 │   ├── rag/                      # RAG pipeline
 │   │   ├── deduplicate_documents.py
 │   │   ├── chunk_documents.py    # Structure-aware chunking
@@ -293,7 +297,7 @@ Browse local storage with [Azure Storage Explorer](https://azure.microsoft.com/f
 | Azure OpenAI | Standard | [Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/) |
 | Azure AI Search | Basic | [Pricing](https://azure.microsoft.com/pricing/details/search/) |
 
-> **Cost optimization**: Hybrid PDF extraction reduces Vision API calls by 70%+ compared to full-vision approaches.
+> **Note**: Azure Document Intelligence pricing is ~$1.50/1000 pages. See [Azure pricing](https://azure.microsoft.com/pricing/details/ai-document-intelligence/).
 
 ## Clean Up
 
@@ -317,7 +321,7 @@ azd down
 - [Azure AI Search Agentic Retrieval](https://learn.microsoft.com/azure/search/agentic-retrieval-overview)
 - [Microsoft Agent Framework](https://github.com/microsoft/agent-framework)
 - [Azure AI Evaluation SDK](https://learn.microsoft.com/azure/ai-studio/how-to/develop/evaluate-sdk)
-- [PyMuPDF4LLM](https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/)
+- [Azure Document Intelligence](https://learn.microsoft.com/azure/ai-services/document-intelligence/)
 
 ## Getting Help
 
@@ -327,7 +331,7 @@ azd down
 
 MIT License - see [LICENSE](LICENSE)
 
-**Important**: This project depends on third-party packages with restrictive licenses (AGPL 3.0, GPL 3.0, Commercial) that may affect your use. See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for details.
+All third-party dependencies use permissive licenses (MIT, BSD, Apache 2.0). See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for details.
 
 ## Trademarks
 
